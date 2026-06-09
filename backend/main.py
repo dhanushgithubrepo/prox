@@ -682,3 +682,9 @@ def map_gemini_to_insightsummary(raw: str) -> InsightSummary:
         recommended_actions=recommended_actions,
         email_templates=email_templates
     )
+
+
+import gradio as gr
+from gradio_app import build_demo
+
+app = gr.mount_gradio_app(app, build_demo(), path="/")

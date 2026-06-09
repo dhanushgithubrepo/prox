@@ -10,7 +10,7 @@ langsmith==0.0.69
 redis==5.0.1
 python-dotenv==1.0.0
 openpyxl==3.1.2
-streamlit==1.28.0
+gradio==5.9.1
 plotly==5.18.0
 requests==2.31.0
 sendgrid==6.10.0
