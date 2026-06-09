@@ -1,8 +1,12 @@
+import os
+
 import streamlit as st
 import requests
 import pandas as pd
 from io import BytesIO
 import plotly.express as px
+
+API_BASE_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(page_title="Proximity AI - Customer Intelligence", layout="wide")
 
@@ -20,7 +24,7 @@ if uploaded_file:
     files = {"file": (uploaded_file.name, uploaded_file.read(), uploaded_file.type)}
     params = {"use_ai": use_ai}
     try:
-        response = requests.post("http://127.0.0.1:8000/analyze/rfm", files=files, params=params)
+        response = requests.post(f"{API_BASE_URL}/analyze/rfm", files=files, params=params)
         if response.status_code != 200:
             st.error(f"API Error: {response.status_code} — {response.text}")
             st.stop()
@@ -42,7 +46,7 @@ if uploaded_file:
     with st.sidebar:
         st.header("💾 Cache Status")
         try:
-            cache_stats = requests.get("http://127.0.0.1:8000/cache/stats").json()
+            cache_stats = requests.get(f"{API_BASE_URL}/cache/stats").json()
             cache_type = cache_stats.get("cache_type", "Unknown")
             st.metric("Cache Type", cache_type)
             st.metric("Total Keys", cache_stats.get("total_keys", 0))
@@ -50,7 +54,7 @@ if uploaded_file:
             if cache_type == "Redis":
                 st.metric("Hit Rate", f"{cache_stats.get('keyspace_hits', 0)}/{cache_stats.get('keyspace_hits', 0) + cache_stats.get('keyspace_misses', 1)}")
             if st.button("Clear Cache"):
-                requests.delete("http://127.0.0.1:8000/cache/clear")
+                requests.delete(f"{API_BASE_URL}/cache/clear")
                 st.success("Cache cleared!")
                 st.rerun()
         except Exception as e:

@@ -21,7 +21,7 @@ export default function LandingPage() {
     setError(null)
 
     try {
-      const res = await fetch("http://localhost:5000/api/waitlist", {
+      const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

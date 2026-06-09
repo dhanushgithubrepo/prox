@@ -1,10 +1,15 @@
 import json
 import hashlib
+import os
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 
+def _get_redis_url() -> str:
+    return os.getenv("REDIS_URL", "redis://localhost:6379")
+
 class CacheManager:
-    def __init__(self, redis_url: str = "redis://localhost:6379", ttl_hours: int = 24):
+    def __init__(self, redis_url: str | None = None, ttl_hours: int = 24):
+        redis_url = redis_url or _get_redis_url()
         self.ttl = timedelta(hours=ttl_hours)
         self._memory_cache = {}  # Fallback in-memory cache
         self._cache_timestamps = {}  # Track expiration
