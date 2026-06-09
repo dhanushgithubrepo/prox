@@ -41,16 +41,18 @@ def _clear_cache() -> str:
         return f"Failed to clear cache: {e}"
 
 
-def _tier_pie(tier_counts: Dict[str, int]):
+def _tier_pie_html(tier_counts: Dict[str, int]) -> str:
     if not tier_counts:
-        return None
-    return px.pie(names=list(tier_counts.keys()), values=list(tier_counts.values()), title="Customer Tiers")
+        return ""
+    fig = px.pie(names=list(tier_counts.keys()), values=list(tier_counts.values()), title="Customer Tiers")
+    return fig.to_html(include_plotlyjs="cdn", full_html=False)
 
 
-def _segment_pie(segment_counts: Dict[str, int]):
+def _segment_pie_html(segment_counts: Dict[str, int]) -> str:
     if not segment_counts:
-        return None
-    return px.pie(names=list(segment_counts.keys()), values=list(segment_counts.values()), title="Customer Segments")
+        return ""
+    fig = px.pie(names=list(segment_counts.keys()), values=list(segment_counts.values()), title="Customer Segments")
+    return fig.to_html(include_plotlyjs="cdn", full_html=False)
 
 
 def _format_insights(ai_insights: Optional[Dict[str, Any]]) -> str:
@@ -74,13 +76,13 @@ def _format_insights(ai_insights: Optional[Dict[str, Any]]) -> str:
 def analyze_customers(
     file: Optional[str],
     use_ai: bool,
-) -> Tuple[str, Optional[Any], Optional[Any], pd.DataFrame, pd.DataFrame, str, str]:
+) -> Tuple[str, str, str, pd.DataFrame, pd.DataFrame, str, str]:
     empty_df = pd.DataFrame()
     if file is None:
         return (
             "Upload a CSV or Excel file to begin.",
-            None,
-            None,
+            "",
+            "",
             empty_df,
             empty_df,
             "_No insights yet._",
@@ -100,8 +102,8 @@ def analyze_customers(
     except requests.exceptions.ConnectionError:
         return (
             "Could not reach the API. Start the server with `uvicorn main:app --reload`.",
-            None,
-            None,
+            "",
+            "",
             empty_df,
             empty_df,
             "_Backend offline._",
@@ -112,8 +114,8 @@ def analyze_customers(
         detail = resp.json().get("detail", resp.text) if resp.headers.get("content-type", "").startswith("application/json") else resp.text
         return (
             f"API error ({resp.status_code}): {detail}",
-            None,
-            None,
+            "",
+            "",
             empty_df,
             empty_df,
             "_Analysis failed._",
@@ -145,7 +147,7 @@ def analyze_customers(
     if discount_codes:
         summary_md += f"\n\n**Discount codes:** `{', '.join(discount_codes[:10])}`"
 
-    actions_df = pd.DataFrame(agent_actions) if agent_actions else empty_df
+    actions_df = pd.DataFrame(agent_actions) if agent_actions else pd.DataFrame()
     if not actions_df.empty:
         display_cols = [c for c in [
             "customer_name", "customer_email", "tier", "segment",
@@ -161,8 +163,8 @@ def analyze_customers(
 
     return (
         summary_md,
-        _tier_pie(tier_counts),
-        _segment_pie(segment_counts),
+        _tier_pie_html(tier_counts),
+        _segment_pie_html(segment_counts),
         customers_display,
         actions_df,
         _format_insights(data.get("ai_insights")),
@@ -171,10 +173,7 @@ def analyze_customers(
 
 
 def build_demo() -> gr.Blocks:
-    with gr.Blocks(
-        title="Proximity AI",
-        theme=gr.themes.Soft(primary_hue="indigo"),
-    ) as demo:
+    with gr.Blocks(title="Proximity AI") as demo:
         gr.Markdown(
             "# Proximity AI — Customer Intelligence\n"
             "Upload customer data (CSV/Excel) for **RFM segmentation**, **churn risk**, "
@@ -193,14 +192,14 @@ def build_demo() -> gr.Blocks:
         summary_out = gr.Markdown()
 
         with gr.Row():
-            tier_chart = gr.Plot(label="Tier distribution")
-            segment_chart = gr.Plot(label="Segment distribution")
+            tier_chart = gr.HTML(label="Tier distribution")
+            segment_chart = gr.HTML(label="Segment distribution")
 
         with gr.Tabs():
             with gr.Tab("Customers"):
-                customers_table = gr.Dataframe(interactive=False, wrap=True)
+                customers_table = gr.Dataframe(label="Customers")
             with gr.Tab("Agent actions"):
-                actions_table = gr.Dataframe(interactive=False, wrap=True)
+                actions_table = gr.Dataframe(label="Agent actions")
             with gr.Tab("AI insights"):
                 insights_out = gr.Markdown()
 
